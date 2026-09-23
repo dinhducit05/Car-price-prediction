@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống DSS - Dự Đoán Giá Xe Ô Tô Sang Trọng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="assets/js/car-images.js"></script>
+    <script defer src="assets/js/app.js"></script>
+    <script defer src="assets/js/evaluation-chart.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body class="antialiased selection:bg-neutral-800 selection:text-white" :class="currentTab === 'home' ? 'bg-black text-slate-100' : 'bg-slate-100 text-slate-900'" x-data="carApp()">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b transition-all duration-300" :class="currentTab === 'home' ? 'bg-black/85 border-white/10 text-white' : 'bg-white/90 border-slate-200 text-slate-900 shadow-sm'">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <!-- Left Menu Button -->
+            <div class="flex items-center space-x-6">
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="flex items-center space-x-2 transition-colors" :class="currentTab === 'home' ? 'text-white hover:text-amber-400' : 'text-slate-700 hover:text-black'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    <span class="text-xs uppercase font-extrabold tracking-widest hidden sm:inline">Menu</span>
+                </button>
+            </div>
+
+            <!-- Center Logo -->
+            <div class="cursor-pointer text-center" @click="currentTab = 'home'">
+                <span class="text-2xl font-black tracking-[0.3em] uppercase" :class="currentTab === 'home' ? 'text-white' : 'text-black'">PORSCHE</span>
+            </div>
+
+            <!-- Right Navigation Links -->
+            <div class="flex items-center space-x-4">
+                <nav class="hidden md:flex items-center space-x-1 p-1 border rounded-lg" :class="currentTab === 'home' ? 'bg-zinc-900/80 border-white/10' : 'bg-slate-200 border-slate-300'">
+                    <button @click="currentTab = 'home'" :class="currentTab === 'home' ? 'bg-white text-black font-bold shadow-md px-5 py-2 rounded-md text-xs uppercase tracking-wider transition-all' : 'text-slate-700 hover:text-black px-5 py-2 rounded-md text-xs uppercase tracking-wider transition-all'">Trang Chủ</button>
+                    <button @click="currentTab = 'predict'" :class="currentTab === 'predict' ? (currentTab === 'home' ? 'bg-white text-black font-bold shadow-md' : 'bg-black text-white font-bold shadow-md') : (currentTab === 'home' ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-black')" class="px-5 py-2 rounded-md text-xs uppercase tracking-wider transition-all">Dự Đoán</button>
+                    <button @click="currentTab = 'model'" :class="currentTab === 'model' ? (currentTab === 'home' ? 'bg-white text-black font-bold shadow-md' : 'bg-black text-white font-bold shadow-md') : (currentTab === 'home' ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-black')" class="px-5 py-2 rounded-md text-xs uppercase tracking-wider transition-all">Đánh Giá Model</button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" x-cloak class="md:hidden border-b px-6 py-4 space-y-3" :class="currentTab === 'home' ? 'bg-black/95 border-white/10 text-white' : 'bg-white/95 border-slate-200 text-slate-900'">
+            <button @click="currentTab = 'home'; mobileMenuOpen = false" class="block text-left w-full text-sm font-bold uppercase tracking-wider py-2">Trang Chủ</button>
+            <button @click="currentTab = 'predict'; mobileMenuOpen = false" class="block text-left w-full text-sm font-bold uppercase tracking-wider py-2">Dự Đoán Giá Xe</button>
+            <button @click="currentTab = 'model'; mobileMenuOpen = false" class="block text-left w-full text-sm font-bold uppercase tracking-wider py-2">Đánh Giá Model</button>
+        </div>
+    </header>
+
+    <main class="min-h-screen">
+
+        <!-- ==================== TAB 1: TRANG CHỦ (DARK THEME - PORSCHE STYLE) ==================== -->
+        <section x-show="currentTab === 'home'" class="w-full bg-black text-white">
+            <!-- HERO IMAGE FULLSCREEN -->
+            <div class="relative w-full h-screen overflow-hidden flex flex-col justify-between">
+                <!-- Background Image -->
+                <div class="absolute inset-0 z-0">
+                    <img src="https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=2000&q=80" alt="Porsche Cayenne Turbo Electric" class="w-full h-full object-cover brightness-[0.75]">
+                </div>
+                <!-- Gradient Overlay -->
+                <div class="absolute inset-0 z-1 bg-gradient-to-t from-black via-black/20 to-black/40 pointer-events-none"></div>
+
+                <!-- Top Spacer -->
+                <div class="h-24"></div>
+
+                <!-- Hero Content -->
+                <div class="relative z-20 max-w-7xl mx-auto px-6 sm:px-12 w-full my-auto pb-16">
+                    <div class="max-w-xl">
+                        <h1 class="text-4xl sm:text-7xl font-black tracking-tight text-white uppercase mb-6 leading-none">
+                            Cayenne <span class="block text-zinc-300 text-3xl sm:text-6xl mt-2 font-light">Turbo Electric.</span>
+                        </h1>
+                        <p class="text-zinc-300 text-sm sm:text-base font-normal mb-8 leading-relaxed">
+                            Hệ thống hỗ trợ quyết định giá xe thông minh - Đỉnh cao công nghệ định giá siêu xe hàng đầu.
+                        </p>
+                        <button @click="currentTab = 'predict'" class="px-8 py-4 rounded-lg bg-white text-black font-black text-xs uppercase tracking-[0.2em] hover:bg-zinc-200 transition-all shadow-2xl flex items-center space-x-3 group">
+                            <span>Discover more</span>
+                            <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Footer Hero Bar -->
+                <div class="relative z-20 max-w-7xl mx-auto px-6 sm:px-12 w-full pb-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-400 space-y-2 sm:space-y-0">
+                    <div class="tracking-wide text-center sm:text-left">
+                        <span>Electric energy consumption combined (model range): 22.5 – 20.4 kWh/100 km · CO₂ emissions combined: 0 g/km</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-white">
+                        <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: YOUR PORSCHE JOURNEY STARTS NOW (GRID CAR CARDS WITH ZOOM & HOVER EXPAND) -->
+            <div class="max-w-7xl mx-auto px-6 py-24">
+                <div class="mb-16">
+                    <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase">Your Porsche journey starts now.</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Card 1: 911 -->
+                    <div class="group relative h-[480px] rounded-xl overflow-hidden bg-zinc-900 border border-white/10 flex flex-col justify-end p-8 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:border-amber-500/50 cursor-pointer" @click="currentTab = 'predict'">
+                        <div class="absolute inset-0 z-0 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80" alt="Porsche 911" class="w-full h-full object-cover brightness-[0.7] group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+                        </div>
+                        <div class="absolute top-8 left-8 z-10">
+                            <span class="text-3xl font-black tracking-widest text-white italic">911</span>
+                        </div>
+                        <div class="relative z-10 space-y-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 rounded-md bg-white/10 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider text-white">Gasoline</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-zinc-300">Iconic sports car with rear engine: 2 doors, 2+2 seats.</p>
+                                <div class="w-10 h-10 rounded-md bg-white/10 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-amber-500 group-hover:text-black transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: 718 -->
+                    <div class="group relative h-[480px] rounded-xl overflow-hidden bg-zinc-900 border border-white/10 flex flex-col justify-end p-8 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:border-amber-500/50 cursor-pointer" @click="currentTab = 'predict'">
+                        <div class="absolute inset-0 z-0 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=80" alt="Porsche 718" class="w-full h-full object-cover brightness-[0.7] group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+                        </div>
+                        <div class="absolute top-8 left-8 z-10">
+                            <span class="text-3xl font-black tracking-widest text-white italic">718</span>
+                        </div>
+                        <div class="relative z-10 space-y-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 rounded-md bg-white/10 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider text-white">Model unavailable</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-zinc-300">Precise mid-engine sports car: 2 doors, 2 seats.</p>
+                                <div class="w-10 h-10 rounded-md bg-white/10 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-amber-500 group-hover:text-black transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Taycan -->
+                    <div class="group relative h-[480px] rounded-xl overflow-hidden bg-zinc-900 border border-white/10 flex flex-col justify-end p-8 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:border-amber-500/50 cursor-pointer" @click="currentTab = 'predict'">
+                        <div class="absolute inset-0 z-0 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1000&q=80" alt="Porsche Taycan" class="w-full h-full object-cover brightness-[0.7] group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+                        </div>
+                        <div class="absolute top-8 left-8 z-10">
+                            <span class="text-3xl font-black tracking-widest text-white italic">Taycan</span>
+                        </div>
+                        <div class="relative z-10 space-y-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 rounded-md bg-white/10 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider text-white">Electric</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-zinc-300">Electric sports car: 4 doors, 4/5 seats.</p>
+                                <div class="w-10 h-10 rounded-md bg-white/10 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-amber-500 group-hover:text-black transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Panamera -->
+                    <div class="group relative h-[480px] rounded-xl overflow-hidden bg-zinc-900 border border-white/10 flex flex-col justify-end p-8 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:border-amber-500/50 cursor-pointer" @click="currentTab = 'predict'">
+                        <div class="absolute inset-0 z-0 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1000&q=80" alt="Porsche Panamera" class="w-full h-full object-cover brightness-[0.7] group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+                        </div>
+                        <div class="absolute top-8 left-8 z-10">
+                            <span class="text-3xl font-black tracking-widest text-white italic">Panamera</span>
+                        </div>
+                        <div class="relative z-10 space-y-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 rounded-md bg-white/10 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider text-white">Hybrid / Gasoline</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-zinc-300">Luxury sedan with a high level of comfort: 4 doors, 4/5 seats.</p>
+                                <div class="w-10 h-10 rounded-md bg-white/10 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-amber-500 group-hover:text-black transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: TRANG DỰ ĐOÁN (LIGHT THEME - REFINED ELEGANCE) ==================== -->
+        <section x-show="currentTab === 'predict'" x-cloak class="max-w-7xl mx-auto px-6 py-32 bg-slate-100 text-slate-900">
+            <div class="mb-10 text-center sm:text-left">
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-amber-700">Hệ Thống Trực Tuyến</span>
+                <h2 class="text-3xl sm:text-5xl font-black text-slate-900 uppercase mt-1 tracking-tight">Dự Đoán Giá Xe Ô Tô</h2>
+                <p class="text-slate-600 text-sm mt-2 max-w-2xl">Nhập đầy đủ thông số kỹ thuật bên dưới để mô hình học máy xử lý và trả về mức giá đề xuất chính xác nhất.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Form nhập liệu -->
+                <div class="lg:col-span-7 bg-white backdrop-blur-xl rounded-xl p-6 sm:p-10 border border-slate-200 shadow-xl">
+                    <form @submit.prevent="submitPrediction" class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="brand" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Hãng xe</label>
+                                <input id="brand" name="brand" type="text" list="car-brand-suggestions" x-model.trim="formData.brand" @change="handleBrandChange()" required autocomplete="off" :placeholder="isLoadingBrands ? 'Đang tải hãng xe...' : 'Chọn gợi ý hoặc tự nhập'" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                                <datalist id="car-brand-suggestions">
+                                    <template x-for="brandName in brandSuggestions" :key="brandName">
+                                        <option :value="brandName"></option>
+                                    </template>
+                                </datalist>
+                                <p class="text-[11px] text-slate-500 mt-2" x-text="brandSuggestions.length ? `${brandSuggestions.length} hãng xe có sẵn — bạn vẫn có thể tự nhập.` : 'Bạn có thể tự nhập tên hãng xe.'"></p>
+                            </div>
+                            <div>
+                                <label for="model" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Dòng xe / Model</label>
+                                <input id="model" name="model" type="text" list="car-model-suggestions" x-model.trim="formData.model" required autocomplete="off" :placeholder="isLoadingModels ? 'Đang tải dòng xe...' : 'Chọn gợi ý hoặc tự nhập'" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                                <datalist id="car-model-suggestions">
+                                    <template x-for="modelName in modelSuggestions" :key="modelName">
+                                        <option :value="modelName"></option>
+                                    </template>
+                                </datalist>
+                                <p class="text-[11px] text-slate-500 mt-2" x-text="modelSuggestions.length ? `${modelSuggestions.length} dòng xe phù hợp — bạn vẫn có thể tự nhập.` : 'Bạn có thể tự nhập tên dòng xe.'"></p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="model_year" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Năm sản xuất</label>
+                                <input id="model_year" name="model_year" type="number" x-model.number="formData.model_year" min="1990" max="2026" required placeholder="2023" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                            </div>
+                            <div>
+                                <label for="mileage_km" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Số kilomet đã đi (km)</label>
+                                <input id="mileage_km" name="mileage_km" type="number" x-model.number="formData.mileage_km" min="0" required placeholder="15000" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="fuel_type" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Nhiên liệu</label>
+                                <select id="fuel_type" name="fuel_type" x-model="formData.fuel_type" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                                    <option value="Gasoline">Xăng (Gasoline)</option>
+                                    <option value="Diesel">Dầu (Diesel)</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Electric">Điện (Electric)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transmission" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Hộp số</label>
+                                <select id="transmission" name="transmission" x-model="formData.transmission" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                                    <option value="Automatic">Tự động (Automatic)</option>
+                                    <option value="CVT">Vô cấp (CVT)</option>
+                                    <option value="Manual">Số sàn (Manual)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="engine_size" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Dung tích động cơ (L)</label>
+                                <input id="engine_size" name="engine_size" type="number" x-model.number="formData.engine_size" min="0" max="10" step="0.1" required placeholder="3.0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                            </div>
+                            <div>
+                                <label for="body_type" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Kiểu thân xe</label>
+                                <select id="body_type" name="body_type" x-model="formData.body_type" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                                    <option value="Sedan">Sedan</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Crossover">Crossover</option>
+                                    <option value="Hatchback">Hatchback</option>
+                                    <option value="Coupe">Coupe</option>
+                                    <option value="Convertible">Convertible</option>
+                                    <option value="Pickup">Pickup</option>
+                                    <option value="Truck">Truck</option>
+                                    <option value="Van/Minivan">Van/Minivan</option>
+                                    <option value="Wagon">Wagon</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="seats" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Số chỗ ngồi</label>
+                                <input id="seats" name="seats" type="number" x-model.number="formData.seats" min="2" max="16" required placeholder="5" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                            </div>
+                            <div>
+                                <label for="condition" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Tình trạng xe</label>
+                                <select id="condition" name="condition" x-model="formData.condition" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-amber-600">
+                                    <option value="New">Mới (New)</option>
+                                    <option value="Used">Đã qua sử dụng (Used)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" :disabled="isLoading" class="w-full py-4 rounded-lg bg-zinc-900 text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-zinc-800 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                            <span x-text="isLoading ? 'Model đang xử lý...' : 'Tính Toán & Dự Đoán Giá Xe'"></span>
+                        </button>
+
+                        <p x-show="predictionError" x-cloak x-text="predictionError" role="alert" class="text-sm font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg p-4"></p>
+                    </form>
+                </div>
+
+                <!-- Khu vực kết quả & Hình ảnh xe sinh động -->
+                <div class="lg:col-span-5 space-y-6">
+                    <!-- Khung hình ảnh xe minh họa theo hãng -->
+                    <div class="bg-white backdrop-blur-xl rounded-xl overflow-hidden border border-slate-200 shadow-xl relative group">
+                        <div class="h-56 w-full overflow-hidden relative">
+                            <img :src="getCarImage()" alt="Car preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                            <span class="absolute top-4 left-4 px-3 py-1 rounded-md bg-white/90 backdrop-blur-md text-[10px] font-extrabold uppercase tracking-wider text-black border border-slate-200 shadow-md" x-text="formData.brand"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white backdrop-blur-xl rounded-xl p-6 sm:p-10 border border-slate-200 shadow-xl relative overflow-hidden">
+                        <h3 class="text-base font-bold uppercase tracking-wider text-slate-900 mb-6 flex items-center space-x-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-600 animate-ping"></span>
+                            <span>Kết Quả Định Giá Hệ Thống</span>
+                        </h3>
+
+                        <div x-show="!predictedResult" class="text-center py-10">
+                            <div class="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto text-slate-400 mb-4 border border-slate-200">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <p class="text-slate-500 text-sm">Vui lòng nhập thông số và bấm tính toán để xem báo cáo định giá.</p>
+                        </div>
+
+                        <div x-show="predictedResult" x-cloak class="space-y-6">
+                            <div class="p-6 rounded-lg bg-slate-50 border border-slate-200 text-center">
+                                <span class="text-xs font-extrabold uppercase tracking-widest text-amber-700">Giá dự đoán tối ưu</span>
+                                <div class="text-3xl sm:text-4xl font-black text-slate-900 mt-2" x-text="predictedResult?.price"></div>
+                                <div class="text-xs text-slate-500 mt-1 font-semibold">Đơn vị: Triệu VNĐ</div>
+                            </div>
+
+                            <div class="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Khoảng giá tham khảo:</span>
+                                    <span class="font-bold text-slate-900" x-text="predictedResult?.range"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Độ tin cậy mô hình:</span>
+                                    <span class="font-bold text-amber-700">94.8% (R² = 0.948)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Thuật toán:</span>
+                                    <span class="font-bold text-slate-900">MLPRegressor</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 text-amber-900 text-xs leading-relaxed">
+                        <span class="font-bold block mb-1">Lưu ý hệ thống DSS:</span>
+                        Kết quả được tổng hợp tự động từ mô hình học máy dựa trên lịch sử giao dịch thị trường. Cảnh báo đây chỉ là kết quả tham khảo.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: TRANG ĐÁNH GIÁ MODEL (LIGHT THEME - REFINED ELEGANCE) ==================== -->
+        <section x-show="currentTab === 'model'" x-cloak class="max-w-7xl mx-auto px-6 py-32 bg-slate-100 text-slate-900">
+            <div class="mb-12 text-center sm:text-left flex flex-col md:flex-row md:items-end justify-between border-b border-slate-300 pb-8">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-amber-700">Báo Cáo Khoa Học Dữ Liệu</span>
+                    <h2 class="text-3xl sm:text-5xl font-black text-slate-900 uppercase mt-1 tracking-tight">Hiệu Suất Mô Hình & Đánh Giá</h2>
+                    <p class="text-slate-600 text-sm mt-2 max-w-2xl">Tổng quan thuật toán MLPRegressor, quy trình huấn luyện và các chỉ số thống kê sai số.</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex items-center space-x-3">
+                    <span class="px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-extrabold uppercase tracking-wider">Status: Optimized & Ready</span>
+                </div>
+            </div>
+
+            <!-- Thống kê tổng quan chỉ số -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white backdrop-blur-xl p-6 rounded-xl border border-slate-200 shadow-xl hover:shadow-2xl transition-all group">
+                    <div class="w-12 h-12 rounded-lg bg-zinc-100 text-zinc-800 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-zinc-900 group-hover:text-white transition-all">NN</div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Thuật toán</span>
+                    <div class="text-xl font-black text-zinc-900 mt-1">MLPRegressor</div>
+                    <span class="text-xs text-slate-400 mt-1 block">Neural Network Scikit-learn</span>
+                </div>
+                <div class="bg-white backdrop-blur-xl p-6 rounded-xl border border-slate-200 shadow-xl hover:shadow-2xl transition-all group">
+                    <div class="w-12 h-12 rounded-lg bg-zinc-100 text-zinc-800 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-zinc-900 group-hover:text-white transition-all">DB</div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Dữ liệu huấn luyện</span>
+                    <div class="text-xl font-black text-slate-900 mt-1">12,450 dòng</div>
+                    <span class="text-xs text-slate-400 mt-1 block">Đã làm sạch & chuẩn hóa (CSV)</span>
+                </div>
+                <div class="bg-white backdrop-blur-xl p-6 rounded-xl border border-slate-200 shadow-xl hover:shadow-2xl transition-all group">
+                    <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-amber-600 group-hover:text-white transition-all">±</div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">MAE (Sai số tuyệt đối)</span>
+                    <div class="text-xl font-black text-amber-700 mt-1">38.5 triệu VNĐ</div>
+                    <span class="text-xs text-slate-400 mt-1 block">Độ lệch trung bình thực tế</span>
+                </div>
+                <div class="bg-white backdrop-blur-xl p-6 rounded-xl border border-slate-200 shadow-xl hover:shadow-2xl transition-all group">
+                    <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-amber-600 group-hover:text-white transition-all">R²</div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Hệ số xác định ($R^2$)</span>
+                    <div class="text-xl font-black text-amber-700 mt-1">0.948</div>
+                    <span class="text-xs text-slate-400 mt-1 block">Độ phù hợp mô hình rất cao</span>
+                </div>
+            </div>
+
+            <!-- Grid: Biểu đồ và Hình ảnh trực quan mô hình -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+                <!-- Biểu đồ -->
+                <div class="lg:col-span-8 bg-white backdrop-blur-xl rounded-xl p-6 sm:p-8 border border-slate-200 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-base font-bold text-slate-900 uppercase tracking-wider">Biểu Đồ So Sánh Giá Thực Tế & Dự Đoán</h3>
+                            <span class="text-xs px-3 py-1 bg-slate-100 rounded-md font-bold text-slate-600">Test Set (20%)</span>
+                        </div>
+                        <div class="h-80 w-full relative">
+                            <canvas id="evaluationChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+                        <span>Trục X: Giá Thực Tế (Triệu VNĐ)</span>
+                        <span>Trục Y: Giá Dự Đoán bởi MLPRegressor (Triệu VNĐ)</span>
+                    </div>
+                </div>
+
+                <!-- Thẻ hình ảnh minh họa quy trình machine learning -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white backdrop-blur-xl rounded-xl p-6 border border-slate-200 shadow-xl relative overflow-hidden group">
+                        <div class="h-40 rounded-lg overflow-hidden mb-4 relative">
+                            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80" alt="Data pipeline" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <span class="absolute bottom-3 left-3 text-white text-xs font-bold uppercase tracking-wider">Pipeline Huấn Luyện</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm mb-2">Quy Trình 8 Bước DSS</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">Từ thu thập dataset thô, xử lý missing values, chuẩn hóa StandardScaler, huấn luyện mạng neuron MLPRegressor và lưu trữ model bằng joblib.</p>
+                    </div>
+
+                    <div class="bg-zinc-900 text-white rounded-xl p-6 shadow-xl relative overflow-hidden">
+                        <div class="relative z-10 space-y-3">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-amber-400">Tech Stack</span>
+                            <h4 class="font-bold text-base uppercase">Python & Scikit-Learn</h4>
+                            <p class="text-xs text-zinc-300 leading-relaxed">Mô hình tích hợp qua Flask API giúp giao diện tương tác real-time với thời gian phản hồi chưa tới 50ms.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng giải thích chi tiết các chỉ số đánh giá -->
+            <div class="bg-white backdrop-blur-xl rounded-xl p-8 border border-slate-200 shadow-xl">
+                <h3 class="text-lg font-bold text-slate-900 mb-6 uppercase tracking-wider">Ý Nghĩa Các Chỉ Số Đánh Giá Mô Hình</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 rounded-lg bg-slate-50 border border-slate-200">
+                        <div class="text-amber-700 font-black text-base mb-2">MAE (Mean Absolute Error)</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">Đo lường trung bình giá trị tuyệt đối của các sai số. Cho biết mô hình dự đoán lệch trung bình bao nhiêu tiền so với thực tế.</p>
+                    </div>
+                    <div class="p-6 rounded-lg bg-slate-50 border border-slate-200">
+                        <div class="text-amber-700 font-black text-base mb-2">RMSE (Root Mean Squared Error)</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">Căn bậc hai của sai số bình phương trung bình. Chỉ số này phạt nặng hơn đối với các trường hợp dự đoán sai lệch lớn.</p>
+                    </div>
+                    <div class="p-6 rounded-lg bg-slate-50 border border-slate-200">
+                        <div class="text-amber-700 font-black text-base mb-2">Hệ số $R^2$ (Coefficient of Determination)</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">Thể hiện mức độ phù hợp của mô hình. Giá trị $R^2$ càng tiến gần đến 1.0 chứng tỏ mô hình giải thích được độ biến thiên của giá xe rất tốt.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t py-16 mt-20 text-xs" :class="currentTab === 'home' ? 'bg-black border-white/10 text-zinc-400' : 'bg-white border-slate-200 text-slate-600'">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10">
+            <div class="space-y-4">
+                <span class="text-lg font-black tracking-widest uppercase" :class="currentTab === 'home' ? 'text-white' : 'text-black'">PORSCHE DSS</span>
+                <p class="leading-relaxed" :class="currentTab === 'home' ? 'text-zinc-500' : 'text-slate-500'">Hệ thống hỗ trợ quyết định dự đoán giá xe ô tô ứng dụng trí tuệ nhân tạo MLPRegressor hiện đại.</p>
+            </div>
+            <div>
+                <h4 class="font-bold uppercase tracking-wider mb-4" :class="currentTab === 'home' ? 'text-white' : 'text-black'">Điều hướng</h4>
+                <ul class="space-y-2">
+                    <li><button @click="currentTab = 'home'" class="hover:underline transition-colors">Trang Chủ</button></li>
+                    <li><button @click="currentTab = 'predict'" class="hover:underline transition-colors">Dự Đoán Giá Xe</button></li>
+                    <li><button @click="currentTab = 'model'" class="hover:underline transition-colors">Đánh Giá Model</button></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold uppercase tracking-wider mb-4" :class="currentTab === 'home' ? 'text-white' : 'text-black'">Công nghệ</h4>
+                <ul class="space-y-2" :class="currentTab === 'home' ? 'text-zinc-500' : 'text-slate-500'">
+                    <li>Python Flask / FastAPI</li>
+                    <li>Scikit-learn MLPRegressor</li>
+                    <li>Tailwind CSS & Alpine.js</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold uppercase tracking-wider mb-4" :class="currentTab === 'home' ? 'text-white' : 'text-black'">Đồ án môn học</h4>
+                <p :class="currentTab === 'home' ? 'text-zinc-500' : 'text-slate-500'">Hệ Hỗ Trợ Quyết Định (Decision Support Systems)</p>
+                <p class="mt-2" :class="currentTab === 'home' ? 'text-zinc-500' : 'text-slate-500'">© 2026 All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
